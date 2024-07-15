@@ -11,7 +11,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton('msgconnect', function () {
+            return new \App\Classes\Services\MsgConnect; // Assurez-vous que le chemin est correct
+        });
     }
 
     /**

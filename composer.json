@@ -15,9 +15,12 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "althinect/filament-spatie-roles-permissions": "^2.2",
+        "dcblogdev/laravel-microsoft-graph": "^3.2",
         "valentin-morice/filament-json-column": "^1.3"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^3.13",
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
