@@ -8,7 +8,7 @@ use GuzzleHttp\Exception\ConnectException;
 use App\Models\SellsyToken;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use App\Exceptions\Selssy\ExceptionResult;
+use App\Exceptions\Sellsy\ExceptionResult;
 use Exception;
 
 class SellsyService

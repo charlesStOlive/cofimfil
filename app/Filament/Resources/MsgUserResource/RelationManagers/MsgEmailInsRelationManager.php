@@ -98,7 +98,7 @@ class MsgEmailInsRelationManager extends RelationManager
                                 TextInput::make('category')->columnSpan(2),
                                 TextInput::make('forwarded_to')->label('adresse transfert')->columnSpan(2),
                             ])->columns(4)->columnSpan(4),
-                        Section::make('Selssy')
+                        Section::make('Sellsy')
                             ->schema([
                                 Checkbox::make('has_client'),
                                 Checkbox::make('has_contact'),
