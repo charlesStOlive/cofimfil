@@ -16,6 +16,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "althinect/filament-spatie-roles-permissions": "^2.2",
+        "jeffgreco13/filament-breezy": "^2.3",
         "dcblogdev/laravel-microsoft-graph": "^3.2",
         "valentin-morice/filament-json-column": "^1.3"
     },
