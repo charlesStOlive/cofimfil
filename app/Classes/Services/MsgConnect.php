@@ -11,6 +11,7 @@ use Exception;
 use GuzzleHttp\Client;
 use App\Models\MsgUser;
 use App\Classes\EmailAnalyser;
+use App\Models\MsgEmailIn;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -145,35 +146,67 @@ class MsgConnect
         }
         return $user;
     }
-
+    
+    function tempExtractNumber(string $input)
+    {
+        // Utiliser preg_match pour vérifier le format et extraire le chiffre
+        if (preg_match('/^test-(\d+)$/', $input, $matches)) {
+            // Convertir le résultat en entier
+            return intval($matches[1]);
+        } else {
+            // Retourner false si le format n'est pas respecté
+            return false;
+        }
+    }
     public function analyseEmail($user, $messageId)
     {
-        // Ensure you have a valid access token
+        $emailToTreat = new MsgEmailIn();// Ensure you have a valid access token
         try {
             // Get the current email to modify
             $email = $this->guzzle('get', "users/{$user->ms_id}/messages/{$messageId}");
-            $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
-            $emailAnalyser->analyse();
-            if ($emailAnalyser->emailIn->is_rejected) {
+            // TEMP -----
+            $subject = Arr::get($email, 'subject');
+            $id = $this->tempExtractNumber($subject);
+            if($id) {
+                \Log::info('id trouvé '.$id);
+                $fakeEmaiilIn = MsgEmailIn::find($id);
+                // $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
+                // $emailAnalyser->analyse();
+                \Log::info($fakeEmaiilIn->toArray());
+                $emailToTreat = $fakeEmaiilIn;
+                return;
+            } else {
+                \Log::info('pas id'); 
                 return;
             }
-
-            if ($emailAnalyser->emailIn->forwarded_to) {
+            // ---- FIN TEMP
+            // $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
+            // $emailAnalyser->analyse();
+            // $emailToTreat = $emailAnalyser->emailIn;
+            if ($emailToTreat->is_rejected) {
+                return;
+            } else if ($emailToTreat->forwarded_to) {
                 if (!$user->is_test) {
-                    return $this->forwardEmail($user, $emailAnalyser->emailIn, $messageId);
+                    return $this->forwardEmail($user, $emailToTreat, $messageId);
                 } else {
                     \Log::info('Blocage Test de la fnc forwardEmail');
-                }
-            }
-            if ($emailAnalyser->emailIn->is_updated) {
-                if (!$user->is_test) {
-                    return $this->updateEmail($user, $emailAnalyser->emailIn, $messageId);
-                } else {
-                    \Log::info('Blocage Test de la fnc updateEmail');
+                    \Log::info($user);
+                    \Log::info($emailToTreat);
+                    \Log::info($messageId);
+                    return true;
                 }
             } else {
-                throw new Exception('Pas de cas de retour d analyse');
-            }
+                if (!$user->is_test) {
+                    return $this->updateEmail($user, $emailToTreat, $messageId);
+                } else {
+                    \Log::info('Blocage Test de la fnc updateEmail');
+                    \Log::info($user);
+                    \Log::info($emailToTreat);
+                    \Log::info($messageId);
+                    return true;
+                }
+                
+            } 
             return true;
         } catch (Exception $e) {
             throw $e;

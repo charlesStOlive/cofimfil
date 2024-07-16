@@ -1,0 +1,172 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class EmailInSeeder extends Seeder
+{
+    public function run()
+    {
+        DB::table('msg_users')->truncate();
+        $users = array(
+            array(
+                "ms_id" => "cdbcf156-e86a-4c33-8d26-3697bfd06e1a",
+                "email" => "charles@notilac.fr",
+                "suscription_id" => NULL,
+                "is_test" => 1,
+                "abn_secret" => "8a819205-1a11-4973-baa3-1e338bdbbb27",
+                "expire_at" => NULL,
+                "created_at" => "2024-07-16 13:39:54",
+                "updated_at" => "2024-07-16 13:39:54",
+            ),
+        );
+
+        DB::table('msg_users')->Insert($users[0]);
+
+         DB::table('msg_email_ins')->truncate();
+        $msg_email_ins = array(
+            array(
+                "msg_user_id" => "1",
+                "data_mail" => "{\"body\": {\"content\": \"<p>Du contenu</p>\", \"contentType\": \"html\"}, \"from\": {\"emailAddress\": {\"address\": \"geraldine@brunet33.fr\"}}, \"subject\": \"Hello World !\", \"test_tos\": \"m.charlin@menuiserie-cofim.com\", \"test_bccs\": null, \"test_from\": \"geraldine@brunet33.fr\", \"toRecipients\": [{\"emailAddress\": {\"address\": \"m.charlin@menuiserie-cofim.com\"}}], \"bccRecipients\": [{\"emailAddress\": {\"address\": \"\"}}]}",
+                "from" => "geraldine@brunet33.fr",
+                "subject" => "Hello World !",
+                "new_subject" => "{1344}-{BRUNET MEN...}|Hello World !",
+                "tos" => "[\"\"]",
+                "is_mail_response" => 0,
+                "is_from_commercial" => 0,
+                "regex_key_value" => NULL,
+                "is_rejected" => 0,
+                "reject_info" => NULL,
+                "category" => "11 à 15",
+                "forwarded_to" => NULL,
+                "move_to_folder" => NULL,
+                "has_sellsy_call" => 1,
+                "has_client" => 1,
+                "has_contact" => 1,
+                "has_staff" => 1,
+                "has_contact_job" => 0,
+                "has_score" => 1,
+                "score" => 14,
+                "score_job" => NULL,
+                "data_sellsy" => "{\"staff\": {\"email\": \"m.charlin@menuiserie-cofim.com\", \"lastname\": \"CHARLIN\", \"firstname\": \"Marie\"}, \"client\": {\"name\": \"BRUNET MENUISERIE*\", \"noteclient\": \"14\", \"progi-code-cli\": \"1344\", \"progi-commerc2\": 240545}, \"contact\": {\"email\": \"geraldine@brunet33.fr\", \"position\": null, \"last_name\": \"Géraldine MARGALEF\", \"first_name\": null}, \"x-search\": [{\"id\": \"fb3cb25011129ecc0f771807654565a461ec6807\", \"email\": \"geraldine@brunet33.fr\", \"owner\": {\"id\": 220625, \"type\": \"staff\"}, \"object\": {\"id\": 42011198, \"type\": \"contact\", \"sub_type\": \"contact\"}, \"created\": \"2022-12-26T09:10:34+00:00\", \"updated\": \"2022-12-26T09:10:34+00:00\", \"civility\": \"mrs\", \"position\": \"\", \"companies\": [{\"id\": \"42850678\", \"name\": \"BRUNET MENUISERIE*\"}], \"last_name\": \"Géraldine MARGALEF\", \"fax_number\": \"\", \"first_name\": \"\", \"is_archived\": false, \"phone_number\": \"+33556063537\", \"mobile_number\": \"\", \"delivery_address\": null, \"invoicing_address\": null}]}",
+                "created_at" => "2024-07-16 08:27:50",
+                "updated_at" => "2024-07-16 08:27:54",
+            ),
+            array(
+                "msg_user_id" => "1",
+                "data_mail" => "{\"body\": {\"content\": \"<p>Du contenu</p>\", \"contentType\": \"html\"}, \"from\": {\"emailAddress\": {\"address\": \"vincent@brunet33.fr\"}}, \"subject\": \"Hello World !\", \"test_tos\": \"m.charlin@menuiserie-cofim.com\", \"test_bccs\": null, \"test_from\": \"vincent@brunet33.fr\", \"toRecipients\": [{\"emailAddress\": {\"address\": \"m.charlin@menuiserie-cofim.com\"}}], \"bccRecipients\": [{\"emailAddress\": {\"address\": \"\"}}]}",
+                "from" => "vincent@brunet33.fr",
+                "subject" => "Hello World !",
+                "new_subject" => "{1344}-{BRUNET MEN...}|Hello World !",
+                "tos" => "[\"\"]",
+                "is_mail_response" => 0,
+                "is_from_commercial" => 0,
+                "regex_key_value" => NULL,
+                "is_rejected" => 0,
+                "reject_info" => NULL,
+                "category" => "16 à 20",
+                "forwarded_to" => NULL,
+                "move_to_folder" => NULL,
+                "has_sellsy_call" => 1,
+                "has_client" => 1,
+                "has_contact" => 1,
+                "has_staff" => 1,
+                "has_contact_job" => 1,
+                "has_score" => 1,
+                "score" => 14,
+                "score_job" => 4,
+                "data_sellsy" => "{\"staff\": {\"email\": \"m.charlin@menuiserie-cofim.com\", \"lastname\": \"CHARLIN\", \"firstname\": \"Marie\"}, \"client\": {\"name\": \"BRUNET MENUISERIE*\", \"noteclient\": \"14\", \"progi-code-cli\": \"1344\", \"progi-commerc2\": 240545}, \"contact\": {\"email\": \"vincent@brunet33.fr\", \"position\": \"CONDUITE DE TRAVAUX\", \"last_name\": \"Vincent HAREL\", \"first_name\": null}, \"x-search\": [{\"id\": \"ecc59063dde3c09f9daea607a40e182e20c9022f\", \"email\": \"vincent@brunet33.fr\", \"owner\": {\"id\": 220625, \"type\": \"staff\"}, \"object\": {\"id\": 51486785, \"type\": \"contact\", \"sub_type\": \"contact\"}, \"created\": \"2024-02-01T09:28:28+00:00\", \"updated\": \"2024-02-01T09:28:28+00:00\", \"civility\": \"mr\", \"position\": \"CONDUITE DE TRAVAUX\", \"companies\": [{\"id\": \"42850678\", \"name\": \"BRUNET MENUISERIE*\"}], \"last_name\": \"Vincent HAREL\", \"fax_number\": \"\", \"first_name\": \"\", \"is_archived\": false, \"phone_number\": \"\", \"mobile_number\": \"\", \"delivery_address\": null, \"invoicing_address\": null}]}",
+                "created_at" => "2024-07-16 08:28:59",
+                "updated_at" => "2024-07-16 08:29:03",
+            ),
+            array(
+                "msg_user_id" => "1",
+                "data_mail" => "{\"body\": {\"content\": \"<p>Du contenu</p>\", \"contentType\": \"html\"}, \"from\": {\"emailAddress\": {\"address\": \"fgagencement@orange.fr\"}}, \"subject\": \"Hello World !\", \"test_tos\": \"l.leponner@menuiserie-cofim.com\", \"test_bccs\": null, \"test_from\": \"fgagencement@orange.fr\", \"toRecipients\": [{\"emailAddress\": {\"address\": \"l.leponner@menuiserie-cofim.com\"}}], \"bccRecipients\": [{\"emailAddress\": {\"address\": \"\"}}]}",
+                "from" => "fgagencement@orange.fr",
+                "subject" => "Hello World !",
+                "new_subject" => "{2635}-{FG AGENCEM...}|Hello World !",
+                "tos" => "[\"\"]",
+                "is_mail_response" => 0,
+                "is_from_commercial" => 0,
+                "regex_key_value" => NULL,
+                "is_rejected" => 0,
+                "reject_info" => NULL,
+                "category" => "0 à 5",
+                "forwarded_to" => "charles.stolive@gmail.com",
+                "move_to_folder" => "archive_outils",
+                "has_sellsy_call" => 1,
+                "has_client" => 1,
+                "has_contact" => 1,
+                "has_staff" => 1,
+                "has_contact_job" => 1,
+                "has_score" => 1,
+                "score" => 0,
+                "score_job" => NULL,
+                "data_sellsy" => "{\"staff\": {\"email\": \"m.charlin@menuiserie-cofim.com\", \"lastname\": \"CHARLIN\", \"firstname\": \"Marie\"}, \"client\": {\"name\": \"FG AGENCEMENT\", \"noteclient\": \"0\", \"progi-code-cli\": \"2635\", \"progi-commerc2\": 240545}, \"contact\": {\"email\": \"fgagencement@orange.fr\", \"position\": \"DIRECTION\", \"last_name\": \"Fabrice GOYER\", \"first_name\": null}, \"x-search\": [{\"id\": \"192ea1355a9f8446aea4f6f17431180ef7a58b15\", \"email\": \"fgagencement@orange.fr\", \"owner\": {\"id\": 220625, \"type\": \"staff\"}, \"object\": {\"id\": 42025539, \"type\": \"contact\", \"sub_type\": \"contact\"}, \"created\": \"2022-12-26T14:00:21+00:00\", \"updated\": \"2022-12-26T14:00:21+00:00\", \"civility\": \"mr\", \"position\": \"DIRECTION\", \"companies\": [{\"id\": \"42875675\", \"name\": \"FG AGENCEMENT\"}], \"last_name\": \"Fabrice GOYER\", \"fax_number\": \"\", \"first_name\": \"\", \"is_archived\": false, \"phone_number\": \"\", \"mobile_number\": \"+33621703740\", \"delivery_address\": null, \"invoicing_address\": null}]}",
+                "created_at" => "2024-07-16 08:35:53",
+                "updated_at" => "2024-07-16 08:35:56",
+            ),
+            array(
+                "msg_user_id" => "1",
+                "data_mail" => "{\"body\": {\"content\": \"<p>Du contenu</p>\", \"contentType\": \"html\"}, \"from\": {\"emailAddress\": {\"address\": \"g.bucaciuc@gmd-construction.com\"}}, \"subject\": \"Hello World !\", \"test_tos\": \"l.leponner@menuiserie-cofim.com\", \"test_bccs\": null, \"test_from\": \"g.bucaciuc@gmd-construction.com\", \"toRecipients\": [{\"emailAddress\": {\"address\": \"l.leponner@menuiserie-cofim.com\"}}], \"bccRecipients\": [{\"emailAddress\": {\"address\": \"\"}}]}",
+                "from" => "g.bucaciuc@gmd-construction.com",
+                "subject" => "Hello World !",
+                "new_subject" => "{6961}-{GMD CONSTR...}|Hello World !",
+                "tos" => "[\"\"]",
+                "is_mail_response" => 0,
+                "is_from_commercial" => 0,
+                "regex_key_value" => NULL,
+                "is_rejected" => 0,
+                "reject_info" => NULL,
+                "category" => "0 à 5",
+                "forwarded_to" => "charles.stolive@gmail.com",
+                "move_to_folder" => "archive_outils",
+                "has_sellsy_call" => 1,
+                "has_client" => 1,
+                "has_contact" => 1,
+                "has_staff" => 1,
+                "has_contact_job" => 1,
+                "has_score" => 0,
+                "score" => NULL,
+                "score_job" => NULL,
+                "data_sellsy" => "{\"staff\": {\"email\": \"m.charlin@menuiserie-cofim.com\", \"lastname\": \"CHARLIN\", \"firstname\": \"Marie\"}, \"client\": {\"name\": \"GMD CONSTRUCTION SERVICES\", \"noteclient\": null, \"progi-code-cli\": \"6961\", \"progi-commerc2\": 240545}, \"contact\": {\"email\": \"g.bucaciuc@gmd-construction.com\", \"position\": \"DIRECTION\", \"last_name\": \"Gheorghe BUCACIUC\", \"first_name\": null}, \"x-search\": [{\"id\": \"e696249b7369b09640f5ed695638f276de5f5043\", \"email\": \"g.bucaciuc@gmd-construction.com\", \"owner\": {\"id\": 220625, \"type\": \"staff\"}, \"object\": {\"id\": 53946969, \"type\": \"contact\", \"sub_type\": \"contact\"}, \"created\": \"2024-05-07T14:06:10+00:00\", \"updated\": \"2024-05-07T14:06:10+00:00\", \"civility\": \"mr\", \"position\": \"DIRECTION\", \"companies\": [{\"id\": \"54291437\", \"name\": \"GMD CONSTRUCTION SERVICES\"}], \"last_name\": \"Gheorghe BUCACIUC\", \"fax_number\": \"\", \"first_name\": \"\", \"is_archived\": false, \"phone_number\": \"\", \"mobile_number\": \"+33751861970\", \"delivery_address\": null, \"invoicing_address\": null}]}",
+                "created_at" => "2024-07-16 08:40:39",
+                "updated_at" => "2024-07-16 08:40:42",
+            ),
+            array(
+                "msg_user_id" => "1",
+                "data_mail" => "{\"body\": {\"content\": \"<p>Du contenu</p><p>emailde: parnault@sogefi-sas.com</p>\", \"contentType\": \"html\"}, \"from\": {\"emailAddress\": {\"address\": \"a.fiegel@menuiserie-cofim.com\"}}, \"subject\": \"Hello World !\", \"test_tos\": \"a.budillon@menuiserie-cofim.com\", \"test_bccs\": null, \"test_from\": \"a.fiegel@menuiserie-cofim.com\", \"toRecipients\": [{\"emailAddress\": {\"address\": \"a.budillon@menuiserie-cofim.com\"}}], \"bccRecipients\": [{\"emailAddress\": {\"address\": \"\"}}]}",
+                "from" => "a.fiegel@menuiserie-cofim.com",
+                "subject" => "Hello World !",
+                "new_subject" => "{2177}-{SOGEFI*}|Hello World !",
+                "tos" => "[\"\"]",
+                "is_mail_response" => 0,
+                "is_from_commercial" => 1,
+                "regex_key_value" => "parnault@sogefi-sas.com",
+                "is_rejected" => 0,
+                "reject_info" => NULL,
+                "category" => "0 à 5",
+                "forwarded_to" => NULL,
+                "move_to_folder" => NULL,
+                "has_sellsy_call" => 1,
+                "has_client" => 1,
+                "has_contact" => 1,
+                "has_staff" => 1,
+                "has_contact_job" => 1,
+                "has_score" => 0,
+                "score" => NULL,
+                "score_job" => 4,
+                "data_sellsy" => "{\"staff\": {\"email\": \"a.budillon@menuiserie-cofim.com\", \"lastname\": \"BUDILLON-MANON\", \"firstname\": \"Audrey\"}, \"client\": {\"name\": \"SOGEFI*\", \"noteclient\": null, \"progi-code-cli\": \"2177\", \"progi-commerc2\": 240547}, \"contact\": {\"email\": \"parnault@sogefi-sas.com\", \"position\": \"CONDUITE DE TRAVAUX\", \"last_name\": \"Pascal ARNAULT\", \"first_name\": null}, \"x-search\": [{\"id\": \"54826976f52ea1fec4d79b264e114e132112f10a\", \"email\": \"parnault@sogefi-sas.com\", \"owner\": {\"id\": 220625, \"type\": \"staff\"}, \"object\": {\"id\": 42024594, \"type\": \"contact\", \"sub_type\": \"contact\"}, \"created\": \"2022-12-26T13:43:18+00:00\", \"updated\": \"2022-12-26T13:43:18+00:00\", \"civility\": \"mr\", \"position\": \"CONDUITE DE TRAVAUX\", \"companies\": [{\"id\": \"42869373\", \"name\": \"SOGEFI*\"}], \"last_name\": \"Pascal ARNAULT\", \"fax_number\": \"\", \"first_name\": \"\", \"is_archived\": false, \"phone_number\": \"+33160656647\", \"mobile_number\": \"+33680409339\", \"delivery_address\": null, \"invoicing_address\": null}]}",
+                "created_at" => "2024-07-16 09:07:49",
+                "updated_at" => "2024-07-16 09:07:53",
+            ),
+        );
+
+        foreach ($msg_email_ins as $emailIn) {
+            DB::table('msg_email_ins')->Insert($emailIn);
+        }
+    }
+}
