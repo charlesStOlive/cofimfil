@@ -8,6 +8,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -62,27 +63,27 @@ class MsgUserResource extends Resource
                     ->query(fn ($query)=> $query->where('is_test', true)),
             ])
             ->actions([
-                // Action::make('suscribe')
-                //     ->label('Souscrire')
-                //     ->requiresConfirmation()
-                //     ->modalDescription('Activez le mode test au préalable, si vous ne voulez pas modifier le mail')
-                //     ->action(fn (MsgUser $record) => $record->suscribe())
-                //     ->visible(fn (MsgUser $record): bool => $record->suscription_id === null),
-                // Action::make('revoke')
-                //     ->label('Révoquer')
-                //     ->color('danger')
-                //     ->requiresConfirmation()
-                //     ->action(fn (MsgUser $record) => $record->revokeSuscription())
-                //     ->visible(fn (MsgUser $record): bool => $record->suscription_id !== null),
-                // Action::make('refresh')
-                //     ->label('Refresh')
-                //     ->color('gray')
-                //     ->action(fn (MsgUser $record) => $record->refreshSuscription())
-                //     ->visible(fn (MsgUser $record): bool => $record->suscription_id !== null),
+                Action::make('suscribe')
+                    ->label('Souscrire')
+                    ->requiresConfirmation()
+                    ->modalDescription('Activez le mode test au préalable, si vous ne voulez pas modifier le mail')
+                    ->action(fn (MsgUser $record) => $record->suscribe())
+                    ->visible(fn (MsgUser $record): bool => $record->suscription_id === null),
+                Action::make('revoke')
+                    ->label('Révoquer')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn (MsgUser $record) => $record->revokeSuscription())
+                    ->visible(fn (MsgUser $record): bool => $record->suscription_id !== null),
+                Action::make('refresh')
+                    ->label('Refresh')
+                    ->color('gray')
+                    ->action(fn (MsgUser $record) => $record->refreshSuscription())
+                    ->visible(fn (MsgUser $record): bool => $record->suscription_id !== null),
             ])
-            // ->recordUrl(
-            //     fn (MsgUser $record): string => MsgUserResource::getUrl('view', ['record' => $record])
-            // )
+            ->recordUrl(
+                fn (MsgUser $record): string => MsgUserResource::getUrl('view', ['record' => $record])
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

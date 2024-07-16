@@ -151,15 +151,15 @@ class EmailAnalyser
                     \Log::info('user email et staff dff');
                     if (!in_array($staffMail, $this->emailIn->tos)) {
                         \Log::info('pas dans la liste des destinataires');
-                        $this->emailIn->move_to_folder = 'archive_outils';
+                        $this->emailIn->move_to_folder = 'x-projet-notation';
                         $this->setScore();
                         $this->emailIn->forwarded_to = $staffMail;
                         $this->emailIn->save();
                         return;
                     } else {
                         \Log::info('Il est ddéjà dans la liste des destinataires mise dans un dossier');
-                        $this->emailIn->move_to_folder = 'archive_outils';
-                        $this->emailIn->category = 'Archivé';
+                        $this->emailIn->move_to_folder = 'x-projet-notation';
+                        // $this->emailIn->category = 'Archivé';
                         $this->emailIn->save();
                         return;
                     }
