@@ -91,7 +91,7 @@ class EmailAnalyser
                 $this->emailIn->regex_key_value = $regexKeyValue;
             } else {
                 $this->emailIn->is_rejected = true;
-                $this->emailIn->reject_info = 'Mail d\'un Com. Sans clefs';
+                $this->emailIn->reject_info = 'Mail Com/Adv. Sans clefs';
                 $this->emailIn->save();
                 return;
             }
@@ -126,7 +126,12 @@ class EmailAnalyser
                 $nameClient = $sellsy['client']['name'] ?? null;
                 $nameClient = Str::limit($nameClient, 10);
                 $codeClient = $sellsy['client']['progi-code-cli'] ?? null;
-                $this->emailIn->new_subject = sprintf('{%s}-{%s}|%s', $codeClient, $nameClient,  $this->emailIn->subject);
+                $codeSubject = sprintf('{%s}-{%s}', $codeClient, $nameClient);
+                if (strpos($this->emailIn->subject, $codeClient) === false) {
+                    $this->emailIn->new_subject = sprintf('%s|%s', $codeSubject, $this->emailIn->subject);
+                } else {
+                    $this->emailIn->new_subject = $this->emailIn->subject;
+                }
                 \Log::info($sellsy['client']['noteclient']);
                 if (isset($sellsy['client']['noteclient'])) {
                     $score = $this->convertIntValue($sellsy['client']['noteclient']);
@@ -212,6 +217,14 @@ class EmailAnalyser
             $score = intval($this->emailIn->score) + intval($this->emailIn->score_job);
             $this->emailIn->category = $this->getScoreCategory($score);
         }
+        $score = null;
+        if ($this->emailIn->has_score) {
+            $score = intval($this->emailIn->score);
+            if($this->emailIn->has_contact_job) {
+                $score += intval($this->emailIn->score_job);
+            }
+            $this->emailIn->category = $this->getScoreCategory($score);
+        }
     }
 
 
@@ -241,17 +254,15 @@ class EmailAnalyser
         return intval($valeur);
     }
 
-    private  function isFromCommercial(array $emails)
-    {
-    }
-
     private function getCommerciaux(): array
     {
         $commerciaux = app(AnalyseSettings::class)->commercials;
         // Extraire et retourner les emails des commerciaux
-        return array_map(function ($commercial) {
+        $commerciaux =  array_map(function ($commercial) {
             return $commercial['email'];
         }, $commerciaux);
+        $advs = MsgUser::pluck('email')->toArray();
+        return array_merge($advs, $commerciaux);
     }
 
     private function getInternalNdds(): array
