@@ -14,6 +14,7 @@ use App\Classes\EmailAnalyser;
 use App\Models\MsgEmailIn;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
+use Arr;
 
 class MsgConnect
 {
@@ -166,17 +167,28 @@ class MsgConnect
             $email = $this->guzzle('get', "users/{$user->ms_id}/messages/{$messageId}");
             // TEMP -----
             $subject = Arr::get($email, 'subject');
-            $id = $this->tempExtractNumber($subject);
-            if($id) {
+            $from = Arr::get($email, 'from.emailAddress.address');
+            if($from == 'charles.stolive@gmail.com') {
+                $id = $this->tempExtractNumber($subject);
                 \Log::info('id trouvé '.$id);
                 $fakeEmaiilIn = MsgEmailIn::find($id);
+                if(!$id) return;
                 // $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
                 // $emailAnalyser->analyse();
-                \Log::info($fakeEmaiilIn->toArray());
+                // \Log::info($fakeEmaiilIn->toArray());
                 $emailToTreat = $fakeEmaiilIn;
-                return;
+                \Log::info('emailToTrat'); 
+                \log::info('$emailToTreat->is_rejected : '.$emailToTreat->is_rejected);
+                \log::info('$emailToTreat->forwarded_to : '.$emailToTreat->forwarded_to);
+                \log::info('$emailToTreat->move_to_folder : '.$emailToTreat->move_to_folder);
+                \log::info('$emailToTreat->new_subject : '.$emailToTreat->new_subject);
+                \log::info('$emailToTreat->category : '.$emailToTreat->category);
+                // return;
             } else {
-                \Log::info('pas id'); 
+                
+                \Log::info('pas id ou pas charles'); 
+                \Log::info($from); 
+                \Log::info($subject); 
                 return;
             }
             // ---- FIN TEMP
@@ -190,9 +202,6 @@ class MsgConnect
                     return $this->forwardEmail($user, $emailToTreat, $messageId);
                 } else {
                     \Log::info('Blocage Test de la fnc forwardEmail');
-                    \Log::info($user);
-                    \Log::info($emailToTreat);
-                    \Log::info($messageId);
                     return true;
                 }
             } else {
@@ -200,9 +209,6 @@ class MsgConnect
                     return $this->updateEmail($user, $emailToTreat, $messageId);
                 } else {
                     \Log::info('Blocage Test de la fnc updateEmail');
-                    \Log::info($user);
-                    \Log::info($emailToTreat);
-                    \Log::info($messageId);
                     return true;
                 }
                 
@@ -217,8 +223,10 @@ class MsgConnect
     {
         try {
             if ($emailIn->move_to_folder) {
-                $this->setEmailInFOlder($user, $emailIn, $messageId);
-            }
+                $resultFolder = $this->setEmailInFOlder($user, $emailIn, $messageId);
+                $messageId = $resultFolder['id'];
+            } 
+            $comment = sprintf('emailde: %s', $emailIn->from);
             $forwardData = [
                 'message' => [
                     'toRecipients' => [
@@ -228,15 +236,33 @@ class MsgConnect
                             ],
                         ],
                     ],
-                    'comment' => 'Forwarded message',
                 ],
+                'comment' => $comment,
                 'saveToSentItems' => true,
             ];
+            // \Log::info('forwardData');
+            // \Log::info($forwardData);
+            $forwardResult = $this->guzzle('post', "users/{$user->ms_id}/messages/{$messageId}/forward", $forwardData);
+            // \Log::info("forwardResult");
+            // \Log::info($forwardResult);
 
-            return $this->guzzle('post', "users/{$user->ms_id}/messages/{$messageId}/forward", $forwardData);
+            return $forwardResult;
         } catch (Exception $e) {
-            //\Log::error("Failed to forward email: " . $e->getMessage());
+            \Log::error("Failed to forward email: " . $e->getMessage());
             throw new Exception('Failed to forward email. Please try again later.');
+        }
+    }
+
+    public function setEmailIsRead($user, $messageId , $isRead = true) {
+        try {
+            $updateData = [
+                'isRead' => $isRead,
+            ];
+            return $this->guzzle('patch', "users/{$user->ms_id}/messages/{$messageId}", $updateData);
+            
+        } catch (Exception $e) {
+            //\Log::error("Failed to move email to folder: " . $e->getMessage());
+            throw new Exception('Failed to set Is Read. Please try again later.');
         }
     }
 
@@ -263,13 +289,13 @@ class MsgConnect
             $moveData = [
                 'destinationId' => $folderId,
             ];
-            $this->guzzle('post', "users/{$user->ms_id}/messages/{$messageId}/move", $moveData);
-
-            // Marquer l'email comme lu
-            $updateData = [
-                'isRead' => true,
-            ];
-            return $this->guzzle('patch', "users/{$user->ms_id}/messages/{$messageId}", $updateData);
+            $folderResult =  $this->guzzle('post', "users/{$user->ms_id}/messages/{$messageId}/move", $moveData);
+            return  $folderResult;
+            // // Marquer l'email comme lu
+            // $updateData = [
+            //     'isRead' => true,
+            // ];
+            // return $this->guzzle('patch', "users/{$user->ms_id}/messages/{$messageId}", $updateData);
         } catch (Exception $e) {
             //\Log::error("Failed to move email to folder: " . $e->getMessage());
             throw new Exception('Failed to move email to folder. Please try again later.');
