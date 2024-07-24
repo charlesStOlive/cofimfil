@@ -32,9 +32,8 @@ class EmailAnalyser
 
     public function __construct(array $email, MsgUser $user)
     {
-
         $this->user = $user;
-        $this->emailIn = $user->msg_email_ins()->make();
+        $this->emailIn = $user->msg_email_ins()->make(); 
         $this->extractEmailDetails($email);
     }
 
@@ -53,7 +52,6 @@ class EmailAnalyser
         $bcc =  $this->getEmailToAddresses($email['bccRecipients'] ?? []);
         $this->body = Arr::get($email, 'body.content');
         $this->emailIn->tos = array_merge($tos, $bcc);
-        $this->emailIn->Save();
     }
 
     private function getEmailToAddresses($recipients)
@@ -76,8 +74,8 @@ class EmailAnalyser
     public function analyse(): void
     {
         $emailToAnalyse = $this->checkIfEmailIsToAnalyse();
-        \Log::info('emailToAnalyse');
-        \Log::info($emailToAnalyse);
+        // \Log::info('emailToAnalyse');
+        // \Log::info($emailToAnalyse);
         if ($emailToAnalyse === false) {
             \Log::info('emailToAnalyse false');
             return;
@@ -86,30 +84,25 @@ class EmailAnalyser
             // $this->forwardEmailFromCommerciaux();
             $this->emailIn->is_from_commercial = true;
             $regexKeyValue = $this->findEmailInBody($this->body);
-            \Log::info('regexKeyValue : '.$regexKeyValue);
             if ($regexKeyValue) {
                 $this->emailIn->regex_key_value = $regexKeyValue;
             } else {
                 $this->emailIn->is_rejected = true;
-                $this->emailIn->reject_info = 'Mail Com/Adv. Sans clefs';
-                $this->emailIn->save();
+                $this->emailIn->reject_info = 'Abdn Com/Adv ss clefs';
+                $this->emailIn->save(); 
                 return;
             }
         }
-        \Log::info('sellsy call');
         $this->emailIn->has_sellsy_call = true;
         $sellsy = $this->getContactAndClient();
         $this->emailIn->data_sellsy = $sellsy;
-        \Log::info('after sellsy call');
         if (isset($sellsy['error'])) {
             $this->emailIn->is_rejected = true;
-            $this->emailIn->reject_info = 'Abandonnée Error Sellsy';
-            $this->emailIn->save();
+            $this->emailIn->reject_info = 'Abdn Inc Sellsy';
+            $this->emailIn->save(); \Log::info('je save---------------------107');
         } else {
             if (isset($sellsy['contact'])) {
-                \Log::info('contact OK');
                 $this->emailIn->has_contact = true;
-                \Log::info($sellsy['contact']['position']);
                 if ($position = $sellsy['contact']['position'] ?? false) {
                     $this->emailIn->has_contact_job = true;
                     $score = $this->getContactJobScore($position);
@@ -127,17 +120,14 @@ class EmailAnalyser
                 $nameClient = Str::limit($nameClient, 10);
                 $codeClient = $sellsy['client']['progi-code-cli'] ?? null;
                 $codeSubject = sprintf('{%s}-{%s}', $codeClient, $nameClient);
-                if (strpos($this->emailIn->subject, $codeClient) === false) {
-                    $this->emailIn->new_subject = sprintf('%s|%s', $codeSubject, $this->emailIn->subject);
+                if (strpos($this->emailIn->subject, $codeSubject) === false) {
+                    $this->emailIn->new_subject = $this->rebuildSubject($this->emailIn->subject, $codeSubject);
                 } else {
                     $this->emailIn->new_subject = $this->emailIn->subject;
                 }
-                \Log::info($sellsy['client']['noteclient']);
                 if (isset($sellsy['client']['noteclient'])) {
                     $score = $this->convertIntValue($sellsy['client']['noteclient']);
-                    \Log::info('score' . $score);
                     if (is_null($score)) {
-                        \Log::info('est null');
                         $this->emailIn->category = app(AnalyseSettings::class)->category_no_score;
                     } else {
                         $this->emailIn->score = $score;
@@ -153,19 +143,16 @@ class EmailAnalyser
                 $staffMail = $sellsy['staff']['email'];
                 $this->emailIn->has_staff = true;
                 if ($this->user->email != $staffMail) {
-                    \Log::info('user email et staff dff');
                     if (!in_array($staffMail, $this->emailIn->tos)) {
-                        \Log::info('pas dans la liste des destinataires');
                         $this->emailIn->move_to_folder = 'x-projet-notation';
                         $this->setScore();
                         $this->emailIn->forwarded_to = $staffMail;
-                        $this->emailIn->save();
+                        $this->emailIn->save(); 
                         return;
                     } else {
                         \Log::info('Il est ddéjà dans la liste des destinataires mise dans un dossier');
                         $this->emailIn->move_to_folder = 'x-projet-notation';
-                        // $this->emailIn->category = 'Archivé';
-                        $this->emailIn->save();
+                        $this->emailIn->save(); 
                         return;
                     }
                 } else {
@@ -174,6 +161,24 @@ class EmailAnalyser
             }
             $this->setScore();
             $this->emailIn->save();
+        }
+    }
+
+    // Fonction pour détecter les préfixes et reconstruire le sujet
+    function rebuildSubject($subject, $codeSubject)
+    {
+        // Regex pour détecter les préfixes (Re, Fw, etc.) suivi éventuellement par des chiffres (ex: Re: ou Fw: ou Fwd: etc.)
+        $regex = '/^(Re|Fw|Fwd)(\[\d+\])?(\s*:\s*)?/i';
+
+        // Rechercher le préfixe dans le sujet
+        if (preg_match($regex, $subject, $matches)) {
+            // Extraire le préfixe détecté
+            $prefix = $matches[0];
+            // Reconstruire le sujet en gardant le préfixe, ajoutant le code, et le reste du sujet
+            return sprintf('%s%s|%s', $prefix, $codeSubject, preg_replace($regex, '', $subject));
+        } else {
+            // Pas de préfixe détecté, simplement ajouter le code au début
+            return sprintf('%s|%s', $codeSubject, $subject);
         }
     }
 
@@ -186,11 +191,10 @@ class EmailAnalyser
     private function checkIfEmailIsToAnalyse()
     {
         $ndd = $this->getDomainFromEmail($this->emailIn->from);
-        \Log::info($ndd);
         if (in_array($ndd, $this->getInternalNdds()) && !in_array($this->emailIn->from, $this->getCommerciaux())) {
             $this->emailIn->is_rejected = true;
-            $this->emailIn->reject_info = 'Abandonnée NDD';
-            $this->emailIn->save();
+            $this->emailIn->reject_info = 'Abdn NDD';
+            $this->emailIn->save(); 
             return false;
         } else if (in_array($this->emailIn->from, $this->getCommerciaux())) {
             $this->emailIn->is_from_commercial = true;
@@ -203,7 +207,6 @@ class EmailAnalyser
     private function getContactAndClient(): array
     {
         $sellsy = new SellsyService();
-        \Log::info('getContactAndClient :'.$this->emailIn->regex_key_value);
         if ($this->emailIn->regex_key_value) {
             return $sellsy->searchContactByEmail($this->emailIn->regex_key_value);
         } else {
@@ -213,10 +216,10 @@ class EmailAnalyser
 
     private function setScore()
     {
-        if ($this->emailIn->has_score || $this->emailIn->has_contact_job) {
-            $score = intval($this->emailIn->score) + intval($this->emailIn->score_job);
-            $this->emailIn->category = $this->getScoreCategory($score);
-        }
+        // if ($this->emailIn->has_score || $this->emailIn->has_contact_job) {
+        //     $score = intval($this->emailIn->score) + intval($this->emailIn->score_job);
+        //     $this->emailIn->category = $this->getScoreCategory($score);
+        // }
         $score = null;
         if ($this->emailIn->has_score) {
             $score = intval($this->emailIn->score);
@@ -224,6 +227,8 @@ class EmailAnalyser
                 $score += intval($this->emailIn->score_job);
             }
             $this->emailIn->category = $this->getScoreCategory($score);
+        } else {
+            $this->emailIn->category = app(AnalyseSettings::class)->category_no_score;
         }
     }
 
@@ -231,19 +236,34 @@ class EmailAnalyser
 
     function findEmailInBody($body)
     {
+        $body = strip_tags($body);
         // La regex pour capturer les emails précédés de 'emailde:'
         $regex = '/emailde:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/';
 
         // Recherche des correspondances
         if (preg_match($regex, $body, $matches)) {
             // Si une correspondance est trouvée, retourner l'email
-            \Log::info('matches');
-            \Log::info($matches);
             return $matches[1];
         } else {
             // Si aucune correspondance n'est trouvée, retourner null
             return null;
         }
+    }
+
+    function getBodyWithReplacedKey()
+    {
+        // // La regex pour capturer et enlever les emails précédés de 'emailde:'
+        // $regex = '/emailde:\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/';
+        // // Remplace toutes les occurrences trouvées par une chaîne vide
+        // $bodyWithoutKey = preg_replace($regex, '', $this->emailIn->body);
+        // // Retourner le corps du mail modifié
+        // return $bodyWithoutKey;
+        $regex = '/emailde:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/';
+        // Remplace toutes les occurrences trouvées par 'emailtransféréde:'
+        $replacement = 'emailtransféréde: $1';
+        $bodyWithoutKey = preg_replace($regex, $replacement, $this->body);
+        // Retourner le corps du mail modifié
+        return $bodyWithoutKey;
     }
 
     private function convertIntValue($valeur)

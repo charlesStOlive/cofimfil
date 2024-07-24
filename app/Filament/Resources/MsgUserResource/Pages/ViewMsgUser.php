@@ -51,7 +51,6 @@ class ViewMsgUser extends ViewRecord
                         $bccResipients[] = ['emailAddress' => ['address' => trim($bcc)]];
                     }
                     $dataEmail['bccRecipients'] = $bccResipients;
-                    \Log::info($dataEmail);
                     $emailAnalyser = new EmailAnalyser($dataEmail, $this->getRecord());
                     $emailAnalyser->analyse();
                     $livewire->dispatch('refreshExampleRelationManager');

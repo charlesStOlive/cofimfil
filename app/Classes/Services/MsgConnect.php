@@ -87,7 +87,7 @@ class MsgConnect
             $response = $this->guzzle('post', 'subscriptions', $subscription);
             return ['success' => true, 'response' => $response];
         } catch (Exception $e) {
-            //\Log::error('Failed to subscribe to email notifications: ' . $e->getMessage());
+            \Log::error('Failed to subscribe to email notifications: ' . $e->getMessage());
             return ['success' => false, 'error' => 'Failed to subscribe to email notifications'];
         }
     }
@@ -98,14 +98,14 @@ class MsgConnect
             $response = $this->guzzle('delete', 'subscriptions/' . $subscriptionId);
             return ['success' => true, 'response' => $response];
         } catch (Exception $e) {
-            //\Log::error('Failed to unsubscribe from email notifications: ' . $e->getMessage());
+            \Log::error('Failed to unsubscribe from email notifications: ' . $e->getMessage());
             return ['success' => false, 'error' => 'Failed to unsubscribe from email notifications'];
         }
     }
 
     public function renewEmailNotificationSubscription(string $subscriptionId): array
     {
-        $expirationDate = now()->addHours(24);
+        $expirationDate = now()->addHours(26);
         try {
             $subscription = [
                 'expirationDateTime' => $expirationDate->toISOString(),
@@ -128,7 +128,7 @@ class MsgConnect
         try {
             $user = $this->verifySubscriptionAndgetUser($clientState, $tenantId);
         } catch (\Exception $e) {
-            //\Log::error("Error in subscription verification: " . $e->getMessage());
+            \Log::error("Error in subscription verification: " . $e->getMessage());
             throw $e; // Propagate the exception
         }
         return $this->analyseEmail($user, $messageId);
@@ -165,56 +165,38 @@ class MsgConnect
         try {
             // Get the current email to modify
             $email = $this->guzzle('get', "users/{$user->ms_id}/messages/{$messageId}");
-            // TEMP -----
-            $subject = Arr::get($email, 'subject');
-            $from = Arr::get($email, 'from.emailAddress.address');
-            if($from == 'charles.stolive@gmail.com') {
-                $id = $this->tempExtractNumber($subject);
-                \Log::info('id trouvé '.$id);
-                $fakeEmaiilIn = MsgEmailIn::find($id);
-                if(!$id) return;
-                // $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
-                // $emailAnalyser->analyse();
-                // \Log::info($fakeEmaiilIn->toArray());
-                $emailToTreat = $fakeEmaiilIn;
-                \Log::info('emailToTrat'); 
-                \log::info('$emailToTreat->is_rejected : '.$emailToTreat->is_rejected);
-                \log::info('$emailToTreat->forwarded_to : '.$emailToTreat->forwarded_to);
-                \log::info('$emailToTreat->move_to_folder : '.$emailToTreat->move_to_folder);
-                \log::info('$emailToTreat->new_subject : '.$emailToTreat->new_subject);
-                \log::info('$emailToTreat->category : '.$emailToTreat->category);
-                // return;
-            } else {
-                
-                \Log::info('pas id ou pas charles'); 
-                \Log::info($from); 
-                \Log::info($subject); 
-                return;
-            }
-            // ---- FIN TEMP
-            // $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
-            // $emailAnalyser->analyse();
-            // $emailToTreat = $emailAnalyser->emailIn;
+            // // TEMP -----
+            // // ---- FIN TEMP
+            \Log::info('avant analyse');
+            $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
+            $emailAnalyser->analyse();
+            \Log::info('apres analyse : '.$emailAnalyser->emailIn->from);
+            $emailToTreat = $emailAnalyser->emailIn;
             if ($emailToTreat->is_rejected) {
+                \Log::info('je rejete');
                 return;
             } else if ($emailToTreat->forwarded_to) {
                 if (!$user->is_test) {
+                    \Log::info('je forward');
                     return $this->forwardEmail($user, $emailToTreat, $messageId);
                 } else {
-                    \Log::info('Blocage Test de la fnc forwardEmail');
+                    \Log::error('Blocage Test de la fnc forwardEmail');
                     return true;
                 }
             } else {
                 if (!$user->is_test) {
+                    $emailToTreat->body = $emailAnalyser->getBodyWithReplacedKey();
+                    \Log::info('je update');
                     return $this->updateEmail($user, $emailToTreat, $messageId);
                 } else {
-                    \Log::info('Blocage Test de la fnc updateEmail');
+                    \Log::error('Blocage Test de la fnc updateEmail');
                     return true;
                 }
                 
             } 
             return true;
         } catch (Exception $e) {
+            \Log::error($e);
             throw $e;
         }
     }
@@ -308,6 +290,10 @@ class MsgConnect
             $updateData = [
                 'subject' => $emailIn->new_subject,
                 'categories' => [$emailIn->category],
+                'body' => [
+                    'contentType' => 'HTML',
+                    'content' => $emailIn->body
+                ],
             ];
 
             // Update the email
@@ -320,7 +306,7 @@ class MsgConnect
 
             return true;
         } catch (Exception $e) {
-            //\Log::error("Failed to update email: " . $e->getMessage());
+            \Log::error("Failed to update email: " . $e->getMessage());
             throw new Exception('Failed to update email. Please try again later.');
         }
     }

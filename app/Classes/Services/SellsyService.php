@@ -185,9 +185,7 @@ class SellsyService
 
     public function searchContactByEmail(string $email) {
         $query = sprintf('search?q=%s&type[]=contact&limit=50', $email);
-        
         try {
-            \Log::info('avant execute');
             $searchResult = $this->executeQuery($query);
             $finalResult = [];
             $nbContacts = count($searchResult);
@@ -225,12 +223,9 @@ class SellsyService
 
     public function searchFromNdd($ndd) {
         $query = sprintf('search?q=%s&type[]=contact&limit=50', $ndd);
-        \Log::info('pas de contact recherche sur NDD : '.$ndd);
         try {
             $searchResult = $this->executeQuery($query);
             $finalResult = [];
-            \Log::info('$searchResult');
-            \Log::info($searchResult);
             $result = $searchResult[0];
             $clientId = $result['companies'][0]['id'] ?? null;
             if ($clientId) {
@@ -244,7 +239,7 @@ class SellsyService
             $finalResult['x-search'] = $searchResult;
             return $finalResult;
         } catch(ExceptionResult $e)  {
-            \Log::info($e->getMessage());
+            \Log::error($e->getMessage());
             return array_merge(['error' => $e->getMessage()], $e->getData());
         } catch (Exception $ex) {
             throw $ex;

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use App\Facades\MsgConnect;
+use App\Jobs\ProcessEmailNotification;
 
 class MsgEmailNotification extends Controller
 {
@@ -28,13 +28,17 @@ class MsgEmailNotification extends Controller
         // \Log::error($notificationData);
         // Traitement de la notification
         try {
-            $result = MsgConnect::processEmailNotification($notificationData);
+            //Lancement analyse
+            \Log::info('Lancement analyse JOB ----------------------------------------------');
+            // $result = MsgConnect::processEmailNotification($notificationData);
+            ProcessEmailNotification::dispatch($notificationData);
+            \Log::info('fin analyse JOB ----------------------------------------------');
             //\Log::info('OK with result------------------------');
             //\Log::info($result);
-            return response()->json(['reject_info' => 'success', 'message' => 'Email processed successfully'], 200);
+            return response()->json(['status' => 'success', 'message' => 'Email processed successfully'], 200);
         } catch (\Exception $e) {
-            // \Log::error($e->getMessage());
-            return response()->json(['reject_info' => 'error', 'message' => 'Failed to process email: ' . $e->getMessage()], 500);
+            \Log::error($e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Failed to process email: ' . $e->getMessage()], 500);
         }
     }
 

@@ -21,6 +21,21 @@ class MsgUser extends Model
         'expire_at'
     ];
 
+
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted():void
+    {
+        static::deleted(function ($model) {
+            $model->msg_email_ins()->delete();
+            $model->revokeSuscription();
+        });
+    }
+
     public function msg_email_ins()
     {
         return $this->hasMany(MsgEmailIn::class);
@@ -92,20 +107,23 @@ class MsgUser extends Model
     public function suscribe()
     {
         $reponse = MsgConnect::subscribeToEmailNotifications($this->ms_id, $this->abn_secret);
-        //\Log::info('reponse du suscribe');
-        //\Log::info($reponse);
+        // \Log::info('reponse du suscribe');
+        // \Log::info($reponse);
         if($reponse['response']['id'] ?? false) {
             $this->suscription_id = $reponse['response']['id']; 
             $this->expire_at = Carbon::parse($reponse['response']['expirationDateTime']);
             $this->save();
         } else {
-            //\Log::info('pas ok  apireponse ',$reponse);
+            // \Log::info('pas ok  apireponse ',$reponse);
         }
         
     }
 
     public function revokeSuscription()
     {
+        if(!$this->suscription_id) {
+            return;
+        }
         $reponse = MsgConnect::unsubscribeFromEmailNotifications($this->suscription_id);
         //\Log::info('reponse du unsuscribe');
         //\Log::info($reponse);
@@ -130,6 +148,8 @@ class MsgUser extends Model
             //\Log::info('pas de sucess ???  ' ,$reponse);
         }
     }
+
+
 
     
 }

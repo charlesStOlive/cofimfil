@@ -25,6 +25,8 @@ class MsgEmailIn extends Model
     public function getStatusAttribute() {
         if($this->is_rejected) {
             return $this->reject_info;
+        } else if($this->move_to_folder) {
+            return 'Transferé';
         } else {
             return $this->category;
         }

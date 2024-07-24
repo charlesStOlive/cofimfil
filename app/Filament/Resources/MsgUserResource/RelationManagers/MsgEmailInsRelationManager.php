@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Resources\RelationManagers\RelationManager;
 use ValentinMorice\FilamentJsonColumn\FilamentJsonColumn;
+use Filament\Tables\Filters\TernaryFilter;
 
 class MsgEmailInsRelationManager extends RelationManager
 {
@@ -42,8 +43,9 @@ class MsgEmailInsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('from')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('status')
+                Tables\Columns\TextColumn::make('from')->label('De')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('subject')->label('Sujet')->limit(50)->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('status')->label('Statut')
                     ->badge()
                     ->color(function ($record) {
                         if ($record->is_rejected) {
@@ -67,14 +69,20 @@ class MsgEmailInsRelationManager extends RelationManager
                             return 'heroicon-o-check-circle';
                         }
                     }),
-                Tables\Columns\IconColumn::make('is_from_commercial')->boolean(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->timezone('Europe/Paris')->sortable(),
+                Tables\Columns\IconColumn::make('is_from_commercial')->label('Depuis ADV/COM')->boolean(),
+                Tables\Columns\TextColumn::make('created_at')->label('Crée le')->dateTime()->timezone('Europe/Paris')->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Filter::make('is_from_commercial')
-                    ->toggle()
-                    ->query(fn (Builder $query): Builder => $query->where('is_from_commercial', true)),
+                Filter::make('is_from_commercial')->label('Depuis ADV/COM')->toggle()->query(fn (Builder $query): Builder => $query->where('is_from_commercial', true)),
+                TernaryFilter::make('is_rejected')->label('Filtre rejet')
+                    ->placeholder('Tout')
+                    ->trueLabel('Rejeté')
+                    ->falseLabel('Non rejeté')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->where('is_rejected', true),
+                        false: fn (Builder $query): Builder => $query->where('is_rejected', false),
+                    )
             ])
             ->actions([
                 ViewAction::make()
