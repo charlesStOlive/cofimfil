@@ -175,7 +175,7 @@ class MsgConnect
             if ($emailToTreat->is_rejected) {
                 \Log::info('je rejete');
                 return;
-            } else if ($emailToTreat->forwarded_to) {
+            } else if ($emailToTreat->forwarded_to && ($user->email != 'contact@menuiserie-cofim.com')) {
                 if (!$user->is_test) {
                     \Log::info('je forward');
                     return $this->forwardEmail($user, $emailToTreat, $messageId);
@@ -187,6 +187,7 @@ class MsgConnect
                 if (!$user->is_test) {
                     $emailToTreat->body = $emailAnalyser->getBodyWithReplacedKey();
                     \Log::info('je update');
+                    \Log::info($emailToTreat->body);
                     return $this->updateEmail($user, $emailToTreat, $messageId);
                 } else {
                     \Log::error('Blocage Test de la fnc updateEmail');
@@ -208,7 +209,12 @@ class MsgConnect
                 $resultFolder = $this->setEmailInFOlder($user, $emailIn, $messageId);
                 $messageId = $resultFolder['id'];
             } 
-            $comment = sprintf('emailde: %s', $emailIn->from);
+            // $typeCesure = '\r';
+            // $ct = $emailIn->contentType ?? 'html';
+            // if($emailIn->contentType == 'html') {
+            //     $typeCesure = '</br>';
+            // }
+            $comment = sprintf('emailde= %s ', $emailIn->from);
             $forwardData = [
                 'message' => [
                     'toRecipients' => [
@@ -286,12 +292,13 @@ class MsgConnect
 
     public function updateEmail($user, $emailIn, $messageId)
     {
+        \Log::info('-------------------type email = '.$emailIn->contentType);
         try {
             $updateData = [
                 'subject' => $emailIn->new_subject,
                 'categories' => [$emailIn->category],
                 'body' => [
-                    'contentType' => 'HTML',
+                    'contentType' => $emailIn->contentType ?? 'html',
                     'content' => $emailIn->body
                 ],
             ];
@@ -300,7 +307,7 @@ class MsgConnect
             $this->guzzle('patch', "users/{$user->ms_id}/messages/{$messageId}", $updateData);
 
             // Check if the email needs to be moved to a new folder
-            if ($emailIn->move_to_folder) {
+            if ($emailIn->move_to_folder && ($user->email != 'contact@menuiserie-cofim.com')) {
                 $this->setEmailInFOlder($user, $emailIn, $messageId);
             }
 

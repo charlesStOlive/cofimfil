@@ -61,7 +61,7 @@ class SellsyService
         }
     }
 
-    protected function handleRequest($method, $url, $options = [])
+    protected function handleRequest($method, $url, $options = [], $retry = true)
     {
         // Ajoute l'en-tête d'autorisation pour chaque requête
         $options['headers']['Authorization'] = "Bearer {$this->getAccessToken()}";
@@ -69,14 +69,19 @@ class SellsyService
         try {
             $response = $this->client->request($method, $url, $options);
             return json_decode($response->getBody(), true);
-        } catch (ConnectException $e) {
-            Log::error('Connection error: ' . $e->getMessage());
-            throw new \Exception('Connection error: Unable to connect to Sellsy API');
         } catch (RequestException $e) {
             $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 'N/A';
+            if ($statusCode == 401 && $retry) {
+                // Token has been revoked, request a new one and retry once
+                $this->requestAccessToken();
+                return $this->handleRequest($method, $url, $options, false);
+            }
             $errorMessage = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
             Log::error("Request error (Status: $statusCode): $errorMessage");
             throw new \Exception("Request error (Status: $statusCode): $errorMessage");
+        } catch (ConnectException $e) {
+            Log::error('Connection error: ' . $e->getMessage());
+            throw new \Exception('Connection error: Unable to connect to Sellsy API');
         } catch (\Exception $e) {
             Log::error('Unexpected error: ' . $e->getMessage());
             throw new \Exception('Unexpected error: ' . $e->getMessage());
@@ -184,7 +189,7 @@ class SellsyService
     }
 
     public function searchContactByEmail(string $email) {
-        $query = sprintf('search?q=%s&type[]=contact&limit=50', $email);
+        $query = sprintf('search?q=%s&type[]=contact&limit=50&archived=false', $email);
         try {
             $searchResult = $this->executeQuery($query);
             $finalResult = [];
@@ -222,7 +227,7 @@ class SellsyService
     }
 
     public function searchFromNdd($ndd) {
-        $query = sprintf('search?q=%s&type[]=contact&limit=50', $ndd);
+        $query = sprintf('search?q=%s&type[]=contact&limit=50&archived=false', $ndd);
         try {
             $searchResult = $this->executeQuery($query);
             $finalResult = [];

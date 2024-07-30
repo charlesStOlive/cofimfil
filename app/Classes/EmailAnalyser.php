@@ -21,6 +21,7 @@ class EmailAnalyser
     public string $subject;
     public string $category;
     public string $body;
+    public string $contentType;
     public bool $forbiddenNdd = false;
     public bool $forward = false;
     public bool $has_score = false;
@@ -51,6 +52,7 @@ class EmailAnalyser
         $tos = $this->getEmailToAddresses($email['toRecipients'] ?? []);
         $bcc =  $this->getEmailToAddresses($email['bccRecipients'] ?? []);
         $this->body = Arr::get($email, 'body.content');
+        $this->contentType = Arr::get($email, 'body.contentType');
         $this->emailIn->tos = array_merge($tos, $bcc);
     }
 
@@ -236,9 +238,10 @@ class EmailAnalyser
 
     function findEmailInBody($body)
     {
+        \Log::info('analyse et transformation temp du body***');
         $body = strip_tags($body);
         // La regex pour capturer les emails précédés de 'emailde:'
-        $regex = '/emailde:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/';
+        $regex = '/[eE]mail[Dd]e=\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=\s|$)/';
 
         // Recherche des correspondances
         if (preg_match($regex, $body, $matches)) {
@@ -258,9 +261,11 @@ class EmailAnalyser
         // $bodyWithoutKey = preg_replace($regex, '', $this->emailIn->body);
         // // Retourner le corps du mail modifié
         // return $bodyWithoutKey;
-        $regex = '/emailde:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/';
+        $regex = '/[eE]mail[Dd]e=\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=\s|$)/';
         // Remplace toutes les occurrences trouvées par 'emailtransféréde:'
-        $replacement = 'emailtransféréde: $1';
+        $replacement = 'emailtransféréde= $1 ';
+        \Log::info($this->body);
+        \Log::info($this->contentType);
         $bodyWithoutKey = preg_replace($regex, $replacement, $this->body);
         // Retourner le corps du mail modifié
         return $bodyWithoutKey;
