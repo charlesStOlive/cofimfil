@@ -5,12 +5,13 @@ namespace App\Classes;
 /*
 * msgraph api documentation can be found at https://developer.msgraph.com/reference
 **/
-
+use Exception;
 use App\Models\MsgUser;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use App\Settings\AnalyseSettings;
 use App\Classes\Services\SellsyService;
+use App\Exceptions\Sellsy\ExceptionResult;
 
 class EmailAnalyser
 {
@@ -29,6 +30,7 @@ class EmailAnalyser
     public int $score = 0;
     private MsgUser $user;
     public $emailIn;
+    private $sellsyService = null;
 
     public function __construct(array $email, MsgUser $user)
     {
@@ -78,7 +80,6 @@ class EmailAnalyser
         // \Log::info('emailToAnalyse');
         // \Log::info($emailToAnalyse);
         if ($emailToAnalyse === false) {
-            \Log::info('emailToAnalyse false');
             return;
         }
         if ($emailToAnalyse === 'commerciaux') {
@@ -95,16 +96,16 @@ class EmailAnalyser
             }
         }
         $this->emailIn->has_sellsy_call = true;
-        $sellsy = $this->getContactAndClient();
-        $this->emailIn->data_sellsy = $sellsy;
-        if (isset($sellsy['error'])) {
+        $sellsyResult = $this->getContactAndClient();
+        $this->emailIn->data_sellsy = $sellsyResult;
+        if (isset($sellsyResult['error'])) {
             $this->emailIn->is_rejected = true;
             $this->emailIn->reject_info = 'Abdn Inc Sellsy';
-            $this->emailIn->save(); \Log::info('je save---------------------107');
+            $this->emailIn->save(); 
         } else {
-            if (isset($sellsy['contact'])) {
+            if (isset($sellsyResult['contact'])) {
                 $this->emailIn->has_contact = true;
-                if ($position = $sellsy['contact']['position'] ?? false) {
+                if ($position = $sellsyResult['contact']['position'] ?? false) {
                     $this->emailIn->has_contact_job = true;
                     $score = $this->getContactJobScore($position);
                     if ($score != null) {
@@ -114,20 +115,19 @@ class EmailAnalyser
             } else {
                 \Log::info('client pas ok');
             }
-            if (isset($sellsy['client'])) {
-                \Log::info('client OK');
+            if (isset($sellsyResult['client'])) {
                 $this->emailIn->has_client = true;
-                $nameClient = $sellsy['client']['name'] ?? null;
+                $nameClient = $sellsyResult['client']['name'] ?? null;
                 $nameClient = Str::limit($nameClient, 10);
-                $codeClient = $sellsy['client']['progi-code-cli'] ?? null;
+                $codeClient = $sellsyResult['client']['progi-code-cli'] ?? null;
                 $codeSubject = sprintf('{%s}-{%s}', $codeClient, $nameClient);
                 if (strpos($this->emailIn->subject, $codeSubject) === false) {
                     $this->emailIn->new_subject = $this->rebuildSubject($this->emailIn->subject, $codeSubject);
                 } else {
                     $this->emailIn->new_subject = $this->emailIn->subject;
                 }
-                if (isset($sellsy['client']['noteclient'])) {
-                    $score = $this->convertIntValue($sellsy['client']['noteclient']);
+                if (isset($sellsyResult['client']['noteclient'])) {
+                    $score = $this->convertIntValue($sellsyResult['client']['noteclient']);
                     if (is_null($score)) {
                         $this->emailIn->category = app(AnalyseSettings::class)->category_no_score;
                     } else {
@@ -140,8 +140,8 @@ class EmailAnalyser
             } else {
                 \Log::info('client pas oK');
             }
-            if (isset($sellsy['staff']['email'])) {
-                $staffMail = $sellsy['staff']['email'];
+            if (isset($sellsyResult['staff']['email'])) {
+                $staffMail = $sellsyResult['staff']['email'];
                 $this->emailIn->has_staff = true;
                 if ($this->user->email != $staffMail) {
                     if (!in_array($staffMail, $this->emailIn->tos)) {
@@ -151,7 +151,6 @@ class EmailAnalyser
                         $this->emailIn->save(); 
                         return;
                     } else {
-                        \Log::info('Il est ddéjà dans la liste des destinataires mise dans un dossier');
                         $this->emailIn->move_to_folder = 'x-projet-notation';
                         $this->emailIn->save(); 
                         return;
@@ -165,6 +164,7 @@ class EmailAnalyser
         }
     }
 
+    
     // Fonction pour détecter les préfixes et reconstruire le sujet
     function rebuildSubject($subject, $codeSubject)
     {
@@ -204,16 +204,7 @@ class EmailAnalyser
             return true;
         }
     }
-
-    private function getContactAndClient(): array
-    {
-        $sellsy = new SellsyService();
-        if ($this->emailIn->regex_key_value) {
-            return $sellsy->searchContactByEmail($this->emailIn->regex_key_value);
-        } else {
-            return $sellsy->searchContactByEmail($this->emailIn->from);
-        }
-    }
+    
 
     private function setScore()
     {
@@ -232,6 +223,10 @@ class EmailAnalyser
             $this->emailIn->category = app(AnalyseSettings::class)->category_no_score;
         }
     }
+
+    
+
+    
 
 
 
@@ -263,9 +258,6 @@ class EmailAnalyser
         // Le texte de remplacement
         $replacement = 'emailtransféréde=';
         
-        // Journaliser le contenu du corps initial (optionnel)
-        \Log::info($this->body);
-        
         // Remplacer toutes les occurrences de 'emailde=' par 'emailtransféréde='
         $bodyWithReplacedKey = preg_replace($regex, $replacement, $this->body);
         
@@ -295,14 +287,6 @@ class EmailAnalyser
     private function getInternalNdds(): array
     {
         $ndds =  app(AnalyseSettings::class)->internal_ndds;
-        return array_map(function ($ndd) {
-            return $ndd['ndd'];
-        }, $ndds);
-    }
-
-    private function getForbiddenClientNdd(): array
-    {
-        $ndds =  app(AnalyseSettings::class)->ndd_client_rejecteds;
         return array_map(function ($ndd) {
             return $ndd['ndd'];
         }, $ndds);
@@ -364,5 +348,114 @@ class EmailAnalyser
         }, $scorings);
 
         return $formattedScorings;
+    }
+
+    private function getForbiddenClientNdd(): array
+    {
+        $ndds =  app(AnalyseSettings::class)->ndd_client_rejecteds;
+        return array_map(function ($ndd) {
+            return $ndd['ndd'];
+        }, $ndds);
+    }
+
+    //Methodes Sellsy
+    private function getSellsyService(): SellsyService {
+        if($this->sellsyService == null) {
+            $this->sellsyService = new SellsyService();
+        }
+        return $this->sellsyService;
+    }
+
+    private function getContactAndClient(): array
+    {
+        $this->getSellsyService();
+        if ($this->emailIn->regex_key_value) {
+            return $this->searchContactByEmail($this->emailIn->regex_key_value);
+        } else {
+            return $this->searchContactByEmail($this->emailIn->from);
+        }
+    }
+
+    function extractCustomFields($data) {
+        $customFields = $data['_embed']['custom_fields'];
+        $result = [];
+        foreach ($customFields as $field) {
+            // Vérifiez si la valeur est un tableau et prenez la première valeur si c'est le cas
+            if (is_array($field['value'])) {
+                $result[$field['code']] = $field['value'][0];
+            } else {
+                $result[$field['code']] = $field['value'];
+            }
+        }
+        unset($data['_embed']);
+        return array_merge($data, $result);
+    }
+
+    private function searchContactByEmail(string $email) {
+        $this->getSellsyService();
+        $query = sprintf('search?q=%s&type[]=contact&limit=50&archived=false', $email);
+        try {
+            $searchResult = $this->sellsyService->executeQuery($query);
+            $finalResult = [];
+            $nbContacts = count($searchResult);
+            $result = $searchResult[0];
+            $clientId = $result['companies'][0]['id'] ?? null;
+            $contactId = $result['object']['id'] ?? null;
+            if ($contactId && $nbContacts == 1) {
+                $finalResult['contact'] = $this->sellsyService->getContactById($contactId);
+            } else if($nbContacts > 1) {
+                $finalResult['contact']['error'] = 'multiple';
+            }
+            if ($clientId) {
+                $clientResult = $this->sellsyService->getClientById($clientId);
+                $clientResult  = $this->extractCustomFields($clientResult);
+                $finalResult['client'] = $clientResult;
+                if ($staffId = $clientResult['progi-commerc2'] ?? false) {
+                    $finalResult['staff'] = $this->sellsyService->searchByStaffId($staffId);
+                }
+            }
+            $finalResult['x-search'] = $searchResult;
+            return $finalResult;
+        } catch(ExceptionResult $e)  {
+            if($e->getMessage() == 'no_contact') {
+                $ndd = $this->getDomainFromEmail($email);
+                $finalResult = $this->searchFromNdd($ndd);
+                return $finalResult;
+            }
+            if($e->getMessage() == 'multiple_client') {
+                return array_merge(['error' => 'multiple_client'], $e->getData());
+            }
+        } catch (Exception $ex) {
+            throw $ex;
+        }
+    }
+
+    private function searchFromNdd($ndd) {
+        $this->getSellsyService();
+        if(in_array($ndd, $this->getForbiddenClientNdd())) {
+            return ['error' => 'ndd_ext_forbidden'];
+        }
+        $query = sprintf('search?q=%s&type[]=contact&limit=50&archived=false', $ndd);
+        try {
+            $searchResult = $this->sellsyService->executeQuery($query);
+            $finalResult = [];
+            $result = $searchResult[0];
+            $clientId = $result['companies'][0]['id'] ?? null;
+            if ($clientId) {
+                $clientResult = $this->sellsyService->getClientById($clientId);
+                $clientResult  = $this->extractCustomFields($clientResult);
+                $finalResult['client'] = $clientResult;
+                if ($staffId = $clientResult['progi-commerc2'] ?? false) {
+                    $finalResult['staff'] = $this->sellsyService->searchByStaffId($staffId);
+                }
+            }
+            $finalResult['x-search'] = $searchResult;
+            return $finalResult;
+        } catch(ExceptionResult $e)  {
+            return array_merge(['error' => $e->getMessage()], $e->getData());
+        } catch (Exception $ex) {
+            \Log::error($ex->getMessage());
+            throw $ex;
+        }
     }
 }

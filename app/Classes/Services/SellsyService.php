@@ -2,14 +2,15 @@
 
 namespace App\Classes\Services;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\ConnectException;
-use App\Models\SellsyToken;
+use Exception;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
+use App\Models\SellsyToken;
+use App\Settings\AnalyseSettings;
 use Illuminate\Support\Facades\Log;
 use App\Exceptions\Sellsy\ExceptionResult;
-use Exception;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 
 class SellsyService
 {
@@ -125,10 +126,7 @@ class SellsyService
         return $this->handleRequest('GET', 'contacts', $options);
     }
 
-    private function getDomainFromEmail(string $email): ?string {
-        $parts = explode('@', $email);
-        return $parts[1] ?? null;
-    }
+    
 
     public function executeQuery($query) {
         $allData = [];
@@ -173,83 +171,7 @@ class SellsyService
         return $allData;
     }
 
-    function extractCustomFields($data) {
-        $customFields = $data['_embed']['custom_fields'];
-        $result = [];
-        foreach ($customFields as $field) {
-            // Vérifiez si la valeur est un tableau et prenez la première valeur si c'est le cas
-            if (is_array($field['value'])) {
-                $result[$field['code']] = $field['value'][0];
-            } else {
-                $result[$field['code']] = $field['value'];
-            }
-        }
-        unset($data['_embed']);
-        return array_merge($data, $result);
-    }
-
-    public function searchContactByEmail(string $email) {
-        $query = sprintf('search?q=%s&type[]=contact&limit=50&archived=false', $email);
-        try {
-            $searchResult = $this->executeQuery($query);
-            $finalResult = [];
-            $nbContacts = count($searchResult);
-            $result = $searchResult[0];
-            $clientId = $result['companies'][0]['id'] ?? null;
-            $contactId = $result['object']['id'] ?? null;
-            if ($contactId && $nbContacts == 1) {
-                $finalResult['contact'] = $this->getContactById($contactId);
-            } else if($nbContacts > 1) {
-                $finalResult['contact']['error'] = 'multiple';
-            }
-            if ($clientId) {
-                $clientResult = $this->getClientById($clientId);
-                $clientResult  = $this->extractCustomFields($clientResult);
-                $finalResult['client'] = $clientResult;
-                if ($staffId = $clientResult['progi-commerc2'] ?? false) {
-                    $finalResult['staff'] = $this->searchByStaffId($staffId);
-                }
-            }
-            $finalResult['x-search'] = $searchResult;
-            return $finalResult;
-        } catch(ExceptionResult $e)  {
-            if($e->getMessage() == 'no_contact') {
-                $ndd = $this->getDomainFromEmail($email);
-                $finalResult = $this->searchFromNdd($ndd);
-                return $finalResult;
-            }
-            if($e->getMessage() == 'multiple_client') {
-                return array_merge(['error' => 'multiple_client'], $e->getData());
-            }
-        } catch (Exception $ex) {
-            throw $ex;
-        }
-    }
-
-    public function searchFromNdd($ndd) {
-        $query = sprintf('search?q=%s&type[]=contact&limit=50&archived=false', $ndd);
-        try {
-            $searchResult = $this->executeQuery($query);
-            $finalResult = [];
-            $result = $searchResult[0];
-            $clientId = $result['companies'][0]['id'] ?? null;
-            if ($clientId) {
-                $clientResult = $this->getClientById($clientId);
-                $clientResult  = $this->extractCustomFields($clientResult);
-                $finalResult['client'] = $clientResult;
-                if ($staffId = $clientResult['progi-commerc2'] ?? false) {
-                    $finalResult['staff'] = $this->searchByStaffId($staffId);
-                }
-            }
-            $finalResult['x-search'] = $searchResult;
-            return $finalResult;
-        } catch(ExceptionResult $e)  {
-            \Log::error($e->getMessage());
-            return array_merge(['error' => $e->getMessage()], $e->getData());
-        } catch (Exception $ex) {
-            throw $ex;
-        }
-    }
+    
 
     public function getContactById($id) {
         $queryParams = [
@@ -279,4 +201,6 @@ class SellsyService
     public function getCustomFields() {
         return $this->handleRequest('GET', "custom-fields?limit=50");
     }
+
+    
 }

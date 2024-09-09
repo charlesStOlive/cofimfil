@@ -43,7 +43,7 @@ class MsgConnect
             'client_secret' => config('msgraph.clientSecret'),
             'grant_type' => 'client_credentials',
         ];
-        $token;
+        $token = null;
         try {
             $client = new Client;
             $response = $client->post(config('msgraph.tenantUrlAccessToken'), ['form_params' => $params]);
@@ -167,12 +167,9 @@ class MsgConnect
             $email = $this->guzzle('get', "users/{$user->ms_id}/messages/{$messageId}");
             // // TEMP -----
             // // ---- FIN TEMP
-            \Log::info('avant analyse');
             $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
             $emailAnalyser->analyse();
-            \Log::info('apres analyse from = : '.$emailAnalyser->emailIn->from);
             $emailToTreat = $emailAnalyser->emailIn;
-            \Log::error('NEW ! ');
             if($user->email == 'contact@menuiserie-cofim.com') \Log::info("**********CONTACT*************");
             if ($emailToTreat->is_rejected) {
                 \Log::info('je rejete');
