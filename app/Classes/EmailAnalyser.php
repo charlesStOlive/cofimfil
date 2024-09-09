@@ -21,7 +21,6 @@ class EmailAnalyser
     public string $subject;
     public string $category;
     public string $body;
-    public string $contentType;
     public bool $forbiddenNdd = false;
     public bool $forward = false;
     public bool $has_score = false;
@@ -36,6 +35,7 @@ class EmailAnalyser
         $this->user = $user;
         $this->emailIn = $user->msg_email_ins()->make(); 
         $this->extractEmailDetails($email);
+        
     }
 
     private function extractEmailDetails($email): void
@@ -51,8 +51,7 @@ class EmailAnalyser
         }
         $tos = $this->getEmailToAddresses($email['toRecipients'] ?? []);
         $bcc =  $this->getEmailToAddresses($email['bccRecipients'] ?? []);
-        $this->body = Arr::get($email, 'body.content');
-        $this->contentType = Arr::get($email, 'body.contentType');
+        $this->body = Arr::get($email, 'body.content', '');
         $this->emailIn->tos = array_merge($tos, $bcc);
     }
 
@@ -239,9 +238,12 @@ class EmailAnalyser
     function findEmailInBody($body)
     {
         \Log::info('analyse et transformation temp du body***');
-        $body = strip_tags($body);
-        // La regex pour capturer les emails précédés de 'emailde:'
-        $regex = '/[eE]mail[Dd]e=\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=\s|$)/';
+        
+        // Enlever toutes les balises HTML sauf <p> et <br>
+        $body = strip_tags($body, '<p><br>');
+
+        // La regex pour capturer l'email précédé de 'emailde=', suivi d'espaces et balises ignorées, et se terminant par une balise <p>, <br>, ou une nouvelle ligne
+        $regex = '/[eE]mail[Dd]e=\s*(?:<[^>]*>\s*)*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*(?=<\/p>|<\/br>|<br>|\n|\r|$)/';
 
         // Recherche des correspondances
         if (preg_match($regex, $body, $matches)) {
@@ -253,22 +255,22 @@ class EmailAnalyser
         }
     }
 
+
     function getBodyWithReplacedKey()
     {
-        // // La regex pour capturer et enlever les emails précédés de 'emailde:'
-        // $regex = '/emailde:\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/';
-        // // Remplace toutes les occurrences trouvées par une chaîne vide
-        // $bodyWithoutKey = preg_replace($regex, '', $this->emailIn->body);
-        // // Retourner le corps du mail modifié
-        // return $bodyWithoutKey;
-        $regex = '/[eE]mail[Dd]e=\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=\s|$)/';
-        // Remplace toutes les occurrences trouvées par 'emailtransféréde:'
-        $replacement = 'emailtransféréde= $1 ';
+        // La regex pour capturer 'emailde=' avec n'importe quelle combinaison de majuscules et minuscules
+        $regex = '/[eE]mail[Dd]e=/';
+        // Le texte de remplacement
+        $replacement = 'emailtransféréde=';
+        
+        // Journaliser le contenu du corps initial (optionnel)
         \Log::info($this->body);
-        \Log::info($this->contentType);
-        $bodyWithoutKey = preg_replace($regex, $replacement, $this->body);
+        
+        // Remplacer toutes les occurrences de 'emailde=' par 'emailtransféréde='
+        $bodyWithReplacedKey = preg_replace($regex, $replacement, $this->body);
+        
         // Retourner le corps du mail modifié
-        return $bodyWithoutKey;
+        return $bodyWithReplacedKey;
     }
 
     private function convertIntValue($valeur)

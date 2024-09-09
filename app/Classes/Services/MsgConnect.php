@@ -170,8 +170,10 @@ class MsgConnect
             \Log::info('avant analyse');
             $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
             $emailAnalyser->analyse();
-            \Log::info('apres analyse : '.$emailAnalyser->emailIn->from);
+            \Log::info('apres analyse from = : '.$emailAnalyser->emailIn->from);
             $emailToTreat = $emailAnalyser->emailIn;
+            \Log::error('NEW ! ');
+            if($user->email == 'contact@menuiserie-cofim.com') \Log::info("**********CONTACT*************");
             if ($emailToTreat->is_rejected) {
                 \Log::info('je rejete');
                 return;
@@ -186,8 +188,8 @@ class MsgConnect
             } else {
                 if (!$user->is_test) {
                     $emailToTreat->body = $emailAnalyser->getBodyWithReplacedKey();
-                    \Log::info('je update');
-                    \Log::info($emailToTreat->body);
+                    
+                    // \Log::info($emailToTreat->body);
                     return $this->updateEmail($user, $emailToTreat, $messageId);
                 } else {
                     \Log::error('Blocage Test de la fnc updateEmail');
@@ -298,7 +300,7 @@ class MsgConnect
                 'subject' => $emailIn->new_subject,
                 'categories' => [$emailIn->category],
                 'body' => [
-                    'contentType' => $emailIn->contentType ?? 'html',
+                    'contentType' => $emailIn->contentType,
                     'content' => $emailIn->body
                 ],
             ];
