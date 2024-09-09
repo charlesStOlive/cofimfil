@@ -237,14 +237,17 @@ class EmailAnalyser
         // Enlever toutes les balises HTML sauf <p> et <br>
         $body = strip_tags($body, '<p><br>');
 
-        // La regex pour capturer l'email précédé de 'emailde=', suivi d'espaces et balises ignorées, et se terminant par une balise <p>, <br>, ou une nouvelle ligne
-        $regex = '/[eE]mail[Dd]e=\s*(?:<[^>]*>\s*)*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*(?=<\/p>|<\/br>|<br>|\n|\r|$)/';
+        
+
+        // La regex pour capturer !! email !!
+        $regex = '/!!\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*!!/';
 
         // Recherche des correspondances
         if (preg_match($regex, $body, $matches)) {
             // Si une correspondance est trouvée, retourner l'email
             return $matches[1];
         } else {
+            \Log::info('pas de math pour '.\Log::info($body));
             // Si aucune correspondance n'est trouvée, retourner null
             return null;
         }
@@ -253,14 +256,17 @@ class EmailAnalyser
 
     function getBodyWithReplacedKey()
     {
-        // La regex pour capturer 'emailde=' avec n'importe quelle combinaison de majuscules et minuscules
-        $regex = '/[eE]mail[Dd]e=/';
+        // La regex pour capturer tout ce qui est entouré par '!!' (deux points d'exclamation)
+        $regex = '/!!(.*?)!!/';  // Le '.*?' capture tout ce qui est entre les '!!', de manière non-gourmande
+
         // Le texte de remplacement
-        $replacement = 'emailtransféréde=';
-        
-        // Remplacer toutes les occurrences de 'emailde=' par 'emailtransféréde='
+        $replacement = '!X! $1 !X!';  // Le $1 fait référence à ce qui est capturé entre les '!!'
+
+        // Remplacer toutes les occurrences de '!!...!!' par '!X!...!X!'
         $bodyWithReplacedKey = preg_replace($regex, $replacement, $this->body);
-        
+
+        // \Log::info($bodyWithReplacedKey);
+
         // Retourner le corps du mail modifié
         return $bodyWithReplacedKey;
     }

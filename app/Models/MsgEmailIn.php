@@ -33,6 +33,6 @@ class MsgEmailIn extends Model
     }
 
     public function getContentTypeAttribute() {
-        return \Arr::get($this->data_mail, 'body.contentType');
+        return \Arr::get($this->data_mail, 'body.contentType', 'text');
     }
 }

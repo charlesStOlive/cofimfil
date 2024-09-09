@@ -208,12 +208,8 @@ class MsgConnect
                 $resultFolder = $this->setEmailInFOlder($user, $emailIn, $messageId);
                 $messageId = $resultFolder['id'];
             } 
-            // $typeCesure = '\r';
-            // $ct = $emailIn->contentType ?? 'html';
-            // if($emailIn->contentType == 'html') {
-            //     $typeCesure = '</br>';
-            // }
-            $comment = sprintf('emailde= %s ', $emailIn->from);
+            
+            $comment = sprintf('!! %s !! ', $emailIn->from);
             $forwardData = [
                 'message' => [
                     'toRecipients' => [
