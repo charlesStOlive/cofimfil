@@ -170,16 +170,25 @@ class MsgConnect
             $emailAnalyser =  new EmailAnalyser($email, $user, $messageId);
             $emailAnalyser->analyse();
             $emailToTreat = $emailAnalyser->emailIn;
-            if($user->email == 'contact@menuiserie-cofim.com') \Log::info("**********CONTACT*************");
+            $specificEmails = ['contact@menuiserie-cofim.com', 'c.petrequin@menuiserie-cofim.com'];
+
+            if (in_array($user->email, $specificEmails)) {
+                \Log::info("**********EMAIL SPÉCIFIQUE*************");
+            }
+
+            // Traitement du rejet
             if ($emailToTreat->is_rejected) {
-                \Log::info('je rejete');
+                \Log::info('Email rejeté');
                 return;
-            } else if ($emailToTreat->forwarded_to && ($user->email != 'contact@menuiserie-cofim.com')) {
+            }
+
+            // Vérification du forward et des emails spécifiques
+            if ($emailToTreat->forwarded_to && !in_array($user->email, $specificEmails)) {
                 if (!$user->is_test) {
-                    \Log::info('je forward');
+                    \Log::info('Email forwardé');
                     return $this->forwardEmail($user, $emailToTreat, $messageId);
                 } else {
-                    \Log::error('Blocage Test de la fnc forwardEmail');
+                    \Log::error('Blocage Test de la fonction forwardEmail');
                     return true;
                 }
             } else {
@@ -209,7 +218,7 @@ class MsgConnect
                 $messageId = $resultFolder['id'];
             } 
             
-            $comment = sprintf('!! %s !! ', $emailIn->from);
+            $comment = sprintf('## %s ## ', $emailIn->from);
             $forwardData = [
                 'message' => [
                     'toRecipients' => [
@@ -301,8 +310,14 @@ class MsgConnect
             // Update the email
             $this->guzzle('patch', "users/{$user->ms_id}/messages/{$messageId}", $updateData);
 
+            $specificEmails = ['contact@menuiserie-cofim.com', 'c.petrequin@menuiserie-cofim.com'];
+
+            if (in_array($user->email, $specificEmails)) {
+                \Log::info("**********EMAIL SPÉCIFIQUE*************");
+            }
+
             // Check if the email needs to be moved to a new folder
-            if ($emailIn->move_to_folder && ($user->email != 'contact@menuiserie-cofim.com')) {
+            if ($emailIn->move_to_folder && !in_array($user->email, $specificEmails)) {
                 $this->setEmailInFOlder($user, $emailIn, $messageId);
             }
 

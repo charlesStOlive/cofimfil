@@ -237,10 +237,12 @@ class EmailAnalyser
         // Enlever toutes les balises HTML sauf <p> et <br>
         $body = strip_tags($body, '<p><br>');
 
-        
+        // Remplacer les caractères spéciaux et invisibles comme &nbsp;
+        $body = html_entity_decode($body); // Convertit les entités HTML comme &nbsp; en caractères normaux
+        $body = preg_replace('/\s+/', ' ', $body); // Remplacer les espaces multiples par un seul espace
 
-        // La regex pour capturer !! email !!
-        $regex = '/!!\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*!!/';
+        // La regex pour capturer ## email ##
+        $regex = '/##\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*##/';
 
         // Recherche des correspondances
         if (preg_match($regex, $body, $matches)) {
@@ -257,10 +259,10 @@ class EmailAnalyser
     function getBodyWithReplacedKey()
     {
         // La regex pour capturer tout ce qui est entouré par '!!' (deux points d'exclamation)
-        $regex = '/!!(.*?)!!/';  // Le '.*?' capture tout ce qui est entre les '!!', de manière non-gourmande
+        $regex = '/##(.*?)##/';  // Le '.*?' capture tout ce qui est entre les '##', de manière non-gourmande
 
         // Le texte de remplacement
-        $replacement = '!X! $1 !X!';  // Le $1 fait référence à ce qui est capturé entre les '!!'
+        $replacement = '#X# $1 #X#';  // Le $1 fait référence à ce qui est capturé entre les '!!'
 
         // Remplacer toutes les occurrences de '!!...!!' par '!X!...!X!'
         $bodyWithReplacedKey = preg_replace($regex, $replacement, $this->body);
